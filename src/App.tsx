@@ -19,7 +19,7 @@ interface ArtistsQuery {
 
 const query: TypedDocumentNode<ArtistsQuery> = gql`
   query ArtistsQuery {
-    me @synthetics(timeout: 3000) {
+    me @synthetics(timeout: 1000, errorRate: 0.5) {
       albums {
         edges {
           node {
@@ -33,32 +33,7 @@ const query: TypedDocumentNode<ArtistsQuery> = gql`
 `;
 
 function App() {
-  const [token, setToken] = useState<string | null>(null);
-
-  return (
-    <>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const form = new FormData(e.currentTarget);
-          setToken(String(form.get('token')));
-        }}
-      >
-        <input type="text" name="token" placeholder="Enter token" />
-        <button type="submit">Submit</button>
-      </form>
-      {token && <Albums token={token} />}
-    </>
-  );
-}
-
-function Albums({ token }: { token: string }) {
-  console.log('rerender with token', token);
-  const [queryRef, { refetch }] = useBackgroundQuery(query, {
-    context: {
-      token,
-    },
-  });
+  const [queryRef, { refetch }] = useBackgroundQuery(query);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -73,13 +48,13 @@ function Albums({ token }: { token: string }) {
           );
         }}
       >
-        <AlbumsView queryRef={queryRef} />;
+        <Albums queryRef={queryRef} />
       </ErrorBoundary>
     </Suspense>
   );
 }
 
-function AlbumsView({ queryRef }: { queryRef: QueryReference<ArtistsQuery> }) {
+function Albums({ queryRef }: { queryRef: QueryReference<ArtistsQuery> }) {
   const { data } = useReadQuery(queryRef);
 
   return data.me.albums.edges.map(({ node: album }) => (
